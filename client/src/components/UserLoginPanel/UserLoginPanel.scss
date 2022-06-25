@@ -1,0 +1,40 @@
+@use "../../variables" as v;
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes error-appear {
+    from { scale: 0; }
+    to { scale: 100%; }
+}
+
+.UserLoginPanel, .loginForm {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 15px;
+    // border-style: solid;
+    // border-width: v.$border-width;
+    // border-color: v.$border-color;
+    // border-radius: 15px;
+    border: none;
+
+    & > h1 {
+        margin-top: 0;
+    }
+
+    & > img {
+        animation: rotate 20s linear infinite;
+    }
+}
+
+.errorDialog {
+    background-color: rgba(240, 89, 7, 0.25);
+    padding: 10px 15px;
+    border-radius: 15px;
+
+    animation: error-appear .3s;
+}

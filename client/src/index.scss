@@ -1,0 +1,59 @@
+@use "variables" as v;
+
+html, body, #root {
+    width: 100vw;
+    height: 100vh;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+input {
+    padding: 10px;
+    padding-left: 15px;
+
+    box-sizing: border-box;
+    border-style: solid;
+    border-radius: 5px;
+    border-width: v.$border-width;
+    border-color: v.$border-color;
+    
+    font-size: medium;
+    outline: none;
+    
+    &:hover {
+        border-color: darken(v.$border-color, 25%);
+    }
+
+    &:focus {
+        border-color: v.$accent-color;
+        border-width: calc(v.$border-width + 1px);
+    }
+}
+
+button {
+    border: none;
+    border-radius: 5px;
+    background-color: v.$accent-color;
+    padding: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+    font-size: medium;
+    color: white;
+    font-weight: 500;
+
+    &:hover {
+        cursor: pointer;
+        background-color: darken(v.$accent-color, 10%);
+    }
+
+    &:active {
+        background-color: darken(v.$accent-color, 20%);
+    }
+}
