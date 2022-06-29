@@ -14,25 +14,6 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -70,16 +51,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var crypto_1 = __importStar(require("crypto"));
 var utils_1 = require("./utils");
-var sha = function (input) {
-    return crypto_1.default.createHash("sha256").update(input).digest("base64");
-};
-var default_users = [
-    { id: 0, name: "admin", password_hash: sha("password"), encrypted_secret: "" },
-    { id: 1, name: "user1", password_hash: sha("12345678"), encrypted_secret: "" },
-    { id: 2, name: "user2", password_hash: sha("plzdonthack"), encrypted_secret: "" }
-];
+var user_1 = require("./user");
 var RepositoryError = /** @class */ (function (_super) {
     __extends(RepositoryError, _super);
     function RepositoryError(message) {
@@ -90,19 +63,17 @@ var RepositoryError = /** @class */ (function (_super) {
     RepositoryError.invalidId = function (id) {
         return new RepositoryError("User with id " + id + " does not exist.");
     };
-    RepositoryError.invalidUsernameOrPassword = function () {
-        return new RepositoryError("Wrong username or password");
-    };
     return RepositoryError;
 }(Error));
 var UserRepository = /** @class */ (function () {
     function UserRepository(dao) {
         this.dao = dao;
+        // TODO: In final release, remove this
         this.createTable();
     }
     UserRepository.prototype.createTable = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var _i, default_users_1, user;
+            var _i, defaultUsers_1, user;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -114,16 +85,16 @@ var UserRepository = /** @class */ (function () {
                         // Create database
                         // DEBUG
                         _a.sent();
-                        return [4 /*yield*/, this.dao.run("\n        create table users (\n            id int primary key not null,\n            name text not null,\n            password_hash text not null,\n            encrypted_secret text not null\n        );\n        ")];
+                        return [4 /*yield*/, this.dao.run("\n        create table users (\n            id int primary key not null,\n            name text not null,\n            password_hash text not null,\n            password_salt text not null,\n            encrypted_secret text not null,\n            encrypted_secret_iv text not null,\n            derived_key_salt text not null\n        );\n        ")];
                     case 2:
                         _a.sent();
                         console.log("Populating repository");
-                        _i = 0, default_users_1 = default_users;
+                        _i = 0, defaultUsers_1 = user_1.defaultUsers;
                         _a.label = 3;
                     case 3:
-                        if (!(_i < default_users_1.length)) return [3 /*break*/, 6];
-                        user = default_users_1[_i];
-                        return [4 /*yield*/, this.create(user)];
+                        if (!(_i < defaultUsers_1.length)) return [3 /*break*/, 6];
+                        user = defaultUsers_1[_i];
+                        return [4 /*yield*/, this.store(user)];
                     case 4:
                         _a.sent();
                         _a.label = 5;
@@ -135,13 +106,11 @@ var UserRepository = /** @class */ (function () {
             });
         });
     };
-    UserRepository.prototype.create = function (user) {
+    UserRepository.prototype.store = function (user) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        console.log("Creating user: " + user);
-                        return [4 /*yield*/, this.dao.run("insert into users (id, name, password_hash, encrypted_secret) \n                values (?, ?, ?, ?);", user.id, user.name, user.password_hash, user.encrypted_secret)];
+                    case 0: return [4 /*yield*/, this.dao.run("insert into users (                 id, name, password_hash, password_salt,                 encrypted_secret, encrypted_secret_iv, derived_key_salt )\n                values (?, ?, ?, ?, ?, ?, ?);", user.id, user.name, user.password_hash, user.password_salt, user.encrypted_secret, user.encrypted_secret_iv, user.derived_key_salt)];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -151,17 +120,13 @@ var UserRepository = /** @class */ (function () {
     };
     UserRepository.prototype.validate = function (username, password) {
         return __awaiter(this, void 0, void 0, function () {
-            var result, user, passwordDigest;
+            var user;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, this.getUserByName(username)];
                     case 1:
-                        result = _a.sent();
-                        if (result.type == utils_1.ResultType.error)
-                            return [2 /*return*/, false];
-                        user = result.value;
-                        passwordDigest = sha(password);
-                        return [2 /*return*/, crypto_1.timingSafeEqual(Buffer.from(passwordDigest), Buffer.from(user.password_hash))];
+                        user = _a.sent();
+                        return [2 /*return*/, user.validate(password)];
                 }
             });
         });
@@ -180,42 +145,34 @@ var UserRepository = /** @class */ (function () {
     };
     UserRepository.prototype.getUserById = function (id) {
         return __awaiter(this, void 0, void 0, function () {
-            var value, error_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var value, _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
-                        _a.trys.push([0, 2, , 3]);
+                        _b = (_a = user_1.User).fromAny;
                         return [4 /*yield*/, this.dao.get("select * from users where id = ?", id)];
                     case 1:
-                        value = _a.sent();
+                        value = _b.apply(_a, [_c.sent()]);
                         if (value == null)
-                            return [2 /*return*/, utils_1.Result.error(RepositoryError.invalidId(id))];
-                        return [2 /*return*/, utils_1.Result.success(value)];
-                    case 2:
-                        error_1 = _a.sent();
-                        return [2 /*return*/, utils_1.Result.error(error_1)];
-                    case 3: return [2 /*return*/];
+                            throw RepositoryError.invalidId(id);
+                        return [2 /*return*/, value];
                 }
             });
         });
     };
     UserRepository.prototype.getUserByName = function (name) {
         return __awaiter(this, void 0, void 0, function () {
-            var value, error_2;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var value, _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
-                        _a.trys.push([0, 2, , 3]);
+                        _b = (_a = user_1.User).fromAny;
                         return [4 /*yield*/, this.dao.get("select * from users where name = ?", name)];
                     case 1:
-                        value = _a.sent();
+                        value = _b.apply(_a, [_c.sent()]);
                         if (value == null)
-                            return [2 /*return*/, utils_1.Result.error(RepositoryError.invalidUsernameOrPassword())];
-                        return [2 /*return*/, utils_1.Result.success(value)];
-                    case 2:
-                        error_2 = _a.sent();
-                        return [2 /*return*/, utils_1.Result.error(error_2)];
-                    case 3: return [2 /*return*/];
+                            throw utils_1.AuthError.invalidUsernameOrPassword();
+                        return [2 /*return*/, value];
                 }
             });
         });

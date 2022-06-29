@@ -24,7 +24,7 @@ export default class TokenStore {
 
     constructor() {}
 
-    generate(/* subject: string,  */data: object): string {
+    generate(data: object): string {
         const header: TokenHeader = {
             alg: "HS256",
             typ: "JWT"

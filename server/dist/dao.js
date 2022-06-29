@@ -75,7 +75,7 @@ var AppDAO = /** @class */ (function () {
             var _a;
             (_a = _this.db) === null || _a === void 0 ? void 0 : _a.run(sql, params, function (err) {
                 if (err) {
-                    utils_1.throwError(err, false);
+                    utils_1.throwWarning(err.message);
                     reject(err.message);
                 }
                 resolve();
@@ -92,7 +92,7 @@ var AppDAO = /** @class */ (function () {
             var _a;
             (_a = _this.db) === null || _a === void 0 ? void 0 : _a.get(sql, params, function (err, row) {
                 if (err) {
-                    utils_1.throwError(err, false);
+                    utils_1.throwWarning(err.message);
                     reject(err.message);
                 }
                 resolve(row);
@@ -109,7 +109,7 @@ var AppDAO = /** @class */ (function () {
             var _a;
             (_a = _this.db) === null || _a === void 0 ? void 0 : _a.all(sql, params, function (err, row) {
                 if (err) {
-                    utils_1.throwError(err, false);
+                    utils_1.throwWarning(err.message);
                     reject(err.message);
                 }
                 resolve(row);
@@ -122,7 +122,7 @@ var AppDAO = /** @class */ (function () {
             var _a;
             (_a = _this.db) === null || _a === void 0 ? void 0 : _a.close(function (err) {
                 if (err) {
-                    utils_1.throwError(err, false);
+                    utils_1.throwWarning(err.message);
                     reject(err);
                 }
                 resolve();

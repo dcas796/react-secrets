@@ -18,7 +18,7 @@ var SECRET = (_a = process.env["SIGNATURE_SECRET"]) !== null && _a !== void 0 ? 
 var TokenStore = /** @class */ (function () {
     function TokenStore() {
     }
-    TokenStore.prototype.generate = function (/* subject: string,  */ data) {
+    TokenStore.prototype.generate = function (data) {
         var header = {
             alg: "HS256",
             typ: "JWT"

@@ -44,10 +44,11 @@ var AppRouter = /** @class */ (function () {
     AppRouter.prototype.responseHandler = function (handler) {
         var _this = this;
         return function (req, res) { return __awaiter(_this, void 0, void 0, function () {
-            var result;
+            var result, error_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        _a.trys.push([0, 3, , 4]);
                         result = handler(req);
                         if (!(result instanceof Promise)) return [3 /*break*/, 2];
                         return [4 /*yield*/, result];
@@ -55,15 +56,15 @@ var AppRouter = /** @class */ (function () {
                         result = _a.sent();
                         _a.label = 2;
                     case 2:
-                        switch (result.type) {
-                            case utils_1.ResultType.success:
-                                res.json({ response: result.value });
-                                return [2 /*return*/];
-                            case utils_1.ResultType.error:
-                                res.json({ error: result.value });
-                                return [2 /*return*/];
-                        }
-                        return [2 /*return*/];
+                        res.json({ response: result });
+                        return [3 /*break*/, 4];
+                    case 3:
+                        error_1 = _a.sent();
+                        if (error_1 instanceof utils_1.RequestError)
+                            res.status(error_1.status);
+                        res.json({ error: error_1 });
+                        return [3 /*break*/, 4];
+                    case 4: return [2 /*return*/];
                 }
             });
         }); };

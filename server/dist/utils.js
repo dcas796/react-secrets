@@ -16,26 +16,17 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Result = exports.ResultType = exports.applyMixins = exports.RequestError = exports.throwError = exports.throwMessage = exports.fatalError = void 0;
+exports.AuthError = exports.RequestError = exports.throwWarning = exports.fatalError = void 0;
 function fatalError(message, code) {
     if (code === void 0) { code = 1; }
-    console.error("ERROR: " + message);
+    console.error("FATAL ERROR: " + message);
     return process.exit(code);
 }
 exports.fatalError = fatalError;
-function throwMessage(message, error, exit) {
-    if (exit === void 0) { exit = true; }
-    console.error("ERROR: " + message + (error ? ", reason: " + error.message : ""));
-    if (exit)
-        return process.exit(1);
+function throwWarning(message) {
+    console.warn("WARNING: " + message);
 }
-exports.throwMessage = throwMessage;
-function throwError(error, exit) {
-    var _a;
-    if (exit === void 0) { exit = true; }
-    return throwMessage((_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : "Fatal Error", undefined, exit);
-}
-exports.throwError = throwError;
+exports.throwWarning = throwWarning;
 var RequestError = /** @class */ (function (_super) {
     __extends(RequestError, _super);
     function RequestError(status, message) {
@@ -44,11 +35,11 @@ var RequestError = /** @class */ (function (_super) {
         _this.message = message;
         return _this;
     }
+    RequestError.missingValue = function (name) {
+        return new RequestError(400, "Missing " + name + " in request body");
+    };
     RequestError.typeMismatch = function (name, type) {
         return new RequestError(400, "Type of " + name + " is not " + type);
-    };
-    RequestError.wrongUsernameOrPassword = function () {
-        return new RequestError(400, "Wrong username or password");
     };
     RequestError.noAuthorization = function () {
         return new RequestError(401, "Authorization must be sent with the request");
@@ -62,23 +53,28 @@ var RequestError = /** @class */ (function (_super) {
     return RequestError;
 }(Error));
 exports.RequestError = RequestError;
-// MISC
-// https://stackoverflow.com/questions/26948400/typescript-how-to-extend-two-classes
-function applyMixins(derivedCtor, baseCtors) {
-    baseCtors.forEach(function (baseCtor) {
-        Object.getOwnPropertyNames(baseCtor.prototype).forEach(function (name) {
-            if (name !== 'constructor') {
-                derivedCtor.prototype[name] = baseCtor.prototype[name];
-            }
-        });
-    });
-}
-exports.applyMixins = applyMixins;
+var AuthError = /** @class */ (function (_super) {
+    __extends(AuthError, _super);
+    function AuthError(message) {
+        var _this = _super.call(this) || this;
+        _this.message = message;
+        return _this;
+    }
+    AuthError.invalidUsernameOrPassword = function () {
+        return new AuthError("Wrong username or password");
+    };
+    AuthError.invalidPassword = function () {
+        return new AuthError("Invalid password");
+    };
+    return AuthError;
+}(Error));
+exports.AuthError = AuthError;
+// TODO: Remove Result if not necessary in next commit
 var ResultType;
 (function (ResultType) {
     ResultType[ResultType["success"] = 0] = "success";
     ResultType[ResultType["error"] = 1] = "error";
-})(ResultType = exports.ResultType || (exports.ResultType = {}));
+})(ResultType || (ResultType = {}));
 var Result = /** @class */ (function () {
     function Result(type, value) {
         this.type = type;
@@ -92,4 +88,3 @@ var Result = /** @class */ (function () {
     };
     return Result;
 }());
-exports.Result = Result;

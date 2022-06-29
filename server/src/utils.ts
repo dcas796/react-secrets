@@ -1,30 +1,25 @@
 // ERROR HANDLING
 
 export function fatalError(message?: string, code: number = 1): never {
-    console.error(`ERROR: ${message}`)
+    console.error(`FATAL ERROR: ${message}`)
     return process.exit(code)
 }
 
-export function throwMessage(message: string, error?: Error, exit: boolean = true): never | void {
-    console.error(`ERROR: ${message}` + (error ? ", reason: " + error.message : ""))
-    if (exit) return process.exit(1)
-}
-
-export function throwError(error?: Error | null, exit: boolean = true): never | void {
-    return throwMessage(error?.message ?? "Fatal Error", undefined, exit)
+export function throwWarning(message: string): void {
+    console.warn(`WARNING: ${message}`)
 }
 
 export class RequestError extends Error {
     private constructor(public status: number, public message: string) {
         super()
     }
+    
+    static missingValue(name: string) {
+        return new RequestError(400, `Missing ${name} in request body`)
+    }
 
     static typeMismatch(name: string, type: string) { 
         return new RequestError(400, `Type of ${name} is not ${type}`)
-    }
-
-    static wrongUsernameOrPassword() {
-        return new RequestError(400, "Wrong username or password")
     }
 
     static noAuthorization() {
@@ -40,24 +35,28 @@ export class RequestError extends Error {
     }
 }
 
-// MISC
-// https://stackoverflow.com/questions/26948400/typescript-how-to-extend-two-classes
-export function applyMixins(derivedCtor: any, baseCtors: any[]) {
-    baseCtors.forEach(baseCtor => {
-        Object.getOwnPropertyNames(baseCtor.prototype).forEach(name => {
-             if (name !== 'constructor') {
-                derivedCtor.prototype[name] = baseCtor.prototype[name]
-            }
-        })
-    })
+export class AuthError extends Error {
+    private constructor(public message: string) {
+        super()
+    }
+
+    static invalidUsernameOrPassword() {
+        return new AuthError("Wrong username or password")
+    }
+
+    static invalidPassword() {
+        return new AuthError("Invalid password")
+    }
 }
 
-export enum ResultType {
+// TODO: Remove Result if not necessary in next commit
+
+enum ResultType {
     success,
     error
 }
 
-export class Result<T> {
+class Result<T> {
     private constructor(
         public readonly type: ResultType, 
         public readonly value: T | Error

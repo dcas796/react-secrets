@@ -1,22 +1,20 @@
 import { Express, Request, Response } from "express";
-import { Result, ResultType } from "./utils";
+import { RequestError } from "./utils";
 
-type RequestHandler = (req: Request) => Result<any> | Promise<Result<any>>
+type RequestHandler = (req: Request) => (any | Promise<any>)
 
 export default class AppRouter {
     constructor(public app: Express) {}
 
     private responseHandler(handler: RequestHandler) {
         return async (req: Request, res: Response) => {
-            var result = handler(req)
-            if (result instanceof Promise) result = await result
-            switch (result.type) {
-                case ResultType.success:
-                    res.json({response: result.value})
-                    return
-                case ResultType.error:
-                    res.json({error: result.value})
-                    return
+            try {
+                var result = handler(req)
+                if (result instanceof Promise) result = await result
+                res.json({response: result})
+            } catch (error) {
+                if (error instanceof RequestError) res.status(error.status)
+                res.json({error})
             }
         }
     }

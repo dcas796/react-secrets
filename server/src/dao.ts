@@ -1,5 +1,5 @@
 import sqlite from "sqlite3";
-import { throwError, throwMessage } from "./utils";
+import { throwWarning } from "./utils";
 
 export default class AppDAO {
     db?: sqlite.Database
@@ -24,7 +24,7 @@ export default class AppDAO {
         return new Promise<void>((resolve, reject) => {
             this.db?.run(sql, params, err => {
                 if (err) {
-                    throwError(err, false)
+                    throwWarning(err.message)
                     reject(err.message)
                 }
                 resolve()
@@ -36,7 +36,7 @@ export default class AppDAO {
         return new Promise<any>((resolve, reject) => {
             this.db?.get(sql, params, (err, row) => {
                 if (err) {
-                    throwError(err, false)
+                    throwWarning(err.message)
                     reject(err.message)
                 }
                 resolve(row)
@@ -48,7 +48,7 @@ export default class AppDAO {
         return new Promise<any[]>((resolve, reject) => {
             this.db?.all(sql, params, (err, row) => {
                 if (err) {
-                    throwError(err, false)
+                    throwWarning(err.message)
                     reject(err.message)
                 }
                 resolve(row)
@@ -60,7 +60,7 @@ export default class AppDAO {
         return new Promise<void>((resolve, reject) => {
             this.db?.close(err => {
                 if (err) {
-                    throwError(err, false)
+                    throwWarning(err.message)
                     reject(err)
                 }
                 resolve()

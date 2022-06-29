@@ -49,9 +49,29 @@ var utils_1 = require("./utils");
 var token_1 = __importDefault(require("./token"));
 var DATABASE_PATH = path_1.default.resolve("secrets.db");
 var PORT = 3001;
-function createLoginToken(store, user_id) {
+var createLoginToken = function (store, user_id) {
     return store.generate({ user_id: user_id });
-}
+};
+var getAuthenticatedUser = function (req, store, user_repo) { return __awaiter(void 0, void 0, void 0, function () {
+    var token, decodedPayload, parsedPayload;
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                token = (_a = req.header("authorization")) === null || _a === void 0 ? void 0 : _a.replace("Bearer ", "");
+                if (token == null)
+                    throw utils_1.RequestError.noAuthorization();
+                if (!store.validate(token))
+                    throw utils_1.RequestError.invalidAuthorization();
+                decodedPayload = Buffer.from(token.split(".")[1], "base64url").toString();
+                parsedPayload = JSON.parse(decodedPayload);
+                if (parsedPayload.user_id == null)
+                    throw utils_1.RequestError.corruptedAuthorization();
+                return [4 /*yield*/, user_repo.getUserById(parsedPayload.user_id)];
+            case 1: return [2 /*return*/, _b.sent()];
+        }
+    });
+}); };
 (function () { return __awaiter(void 0, void 0, void 0, function () {
     var app, dao, user_repo, router, store;
     return __generator(this, function (_a) {
@@ -67,71 +87,83 @@ function createLoginToken(store, user_id) {
                 user_repo = new user_repo_1.default(dao);
                 router = new router_1.default(app);
                 store = new token_1.default();
+                // DEBUG
                 router.get("/api/getUserFromId/:id", function (req) { return __awaiter(void 0, void 0, void 0, function () {
-                    var id, result;
+                    var id;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
                                 id = parseInt(req.params.id);
                                 if (isNaN(id)) {
-                                    return [2 /*return*/, utils_1.Result.error(utils_1.RequestError.typeMismatch("id", "number"))];
+                                    throw utils_1.RequestError.typeMismatch("id", "number");
                                 }
                                 return [4 /*yield*/, user_repo.getUserById(id)];
-                            case 1:
-                                result = _a.sent();
-                                if (result.type == utils_1.ResultType.error)
-                                    return [2 /*return*/, utils_1.Result.error(result.value)];
-                                return [2 /*return*/, utils_1.Result.success(result.value)];
+                            case 1: return [2 /*return*/, _a.sent()];
                         }
                     });
                 }); });
                 router.post("/api/authenticate", function (req) { return __awaiter(void 0, void 0, void 0, function () {
-                    var username, password, result, user_id;
+                    var username, password, user;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
                                 username = req.body.username;
                                 password = req.body.password;
                                 if (typeof username != "string")
-                                    return [2 /*return*/, utils_1.Result.error(utils_1.RequestError.typeMismatch("username", "string"))];
+                                    throw utils_1.RequestError.typeMismatch("username", "string");
                                 if (typeof password != "string")
-                                    return [2 /*return*/, utils_1.Result.error(utils_1.RequestError.typeMismatch("password", "string"))];
+                                    throw utils_1.RequestError.typeMismatch("password", "string");
                                 return [4 /*yield*/, user_repo.validate(username, password)];
                             case 1:
                                 if (!(_a.sent()))
-                                    return [2 /*return*/, utils_1.Result.error(utils_1.RequestError.wrongUsernameOrPassword())];
+                                    throw utils_1.AuthError.invalidUsernameOrPassword();
                                 return [4 /*yield*/, user_repo.getUserByName(username)];
                             case 2:
-                                result = _a.sent();
-                                if (result.type == utils_1.ResultType.error)
-                                    return [2 /*return*/, utils_1.Result.error(result.value)];
-                                user_id = result.value.id;
-                                return [2 /*return*/, utils_1.Result.success({ token: createLoginToken(store, user_id) })];
+                                user = _a.sent();
+                                return [2 /*return*/, { token: createLoginToken(store, user.id), secretKey: user.getDerivedKey(password) }];
                         }
                     });
                 }); });
+                // DEBUG
                 router.get("/api/whoami", function (req) { return __awaiter(void 0, void 0, void 0, function () {
-                    var token, decodedPayload, parsedPayload, result, user;
-                    var _a;
-                    return __generator(this, function (_b) {
-                        switch (_b.label) {
-                            case 0:
-                                token = (_a = req.header("authorization")) === null || _a === void 0 ? void 0 : _a.replace("Bearer ", "");
-                                if (token == null)
-                                    return [2 /*return*/, utils_1.Result.error(utils_1.RequestError.noAuthorization())];
-                                if (!store.validate(token))
-                                    return [2 /*return*/, utils_1.Result.error(utils_1.RequestError.invalidAuthorization())];
-                                decodedPayload = Buffer.from(token.split(".")[1], "base64url").toString();
-                                parsedPayload = JSON.parse(decodedPayload);
-                                if (parsedPayload.user_id == null)
-                                    return [2 /*return*/, utils_1.Result.error(utils_1.RequestError.corruptedAuthorization())];
-                                return [4 /*yield*/, user_repo.getUserById(parsedPayload.user_id)];
+                    var user;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0: return [4 /*yield*/, getAuthenticatedUser(req, store, user_repo)];
                             case 1:
-                                result = _b.sent();
-                                if (result.type == utils_1.ResultType.error)
-                                    return [2 /*return*/, utils_1.Result.error(result.value)];
-                                user = result.value;
-                                return [2 /*return*/, utils_1.Result.success("Hello, " + user.name + ". Your id is " + user.id + ".")];
+                                user = _a.sent();
+                                return [2 /*return*/, "Hello, " + user.name + ". Your id is " + user.id + "."];
+                        }
+                    });
+                }); });
+                // DEBUG
+                router.get("/api/derivedKey/:id,:password", function (req) { return __awaiter(void 0, void 0, void 0, function () {
+                    var id, password, user;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                id = parseInt(req.params.id);
+                                password = req.params.password;
+                                if (isNaN(id))
+                                    throw utils_1.RequestError.typeMismatch("id", "number");
+                                return [4 /*yield*/, user_repo.getUserById(id)];
+                            case 1:
+                                user = _a.sent();
+                                return [2 /*return*/, user.getDerivedKey(password)];
+                        }
+                    });
+                }); });
+                router.post("/api/secret/", function (req) { return __awaiter(void 0, void 0, void 0, function () {
+                    var user, key;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0: return [4 /*yield*/, getAuthenticatedUser(req, store, user_repo)];
+                            case 1:
+                                user = _a.sent();
+                                key = req.body.key;
+                                if (key == null)
+                                    throw utils_1.RequestError.missingValue("key");
+                                return [2 /*return*/, user.decryptSecret(key)];
                         }
                     });
                 }); });
